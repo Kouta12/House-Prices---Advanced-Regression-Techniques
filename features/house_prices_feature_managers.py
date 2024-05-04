@@ -159,6 +159,7 @@ class HouseArea(FeatureBase):
         train_feature['HouseArea'] = train_data['TotalBsmtSF'] + train_data['1stFlrSF'] + train_data['2ndFlrSF']
         test_feature['HouseArea'] = test_data['TotalBsmtSF'] + test_data['1stFlrSF'] + test_data['2ndFlrSF']
 
+        create_memo("HouseArea", "家の総面積: 地下の面積＋1階の面積＋2階の面積")
         return train_feature, test_feature
 
 # 他の特徴量クラスも同様に実装
