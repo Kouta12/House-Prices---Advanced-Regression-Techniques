@@ -1,5 +1,9 @@
 import os
+from pathlib import Path
 import pandas as pd
+
+# ▼親ディレクトリの定義
+BASE_DIR = str(Path(os.path.abspath('')).parent) + "/"
 
 class HousePricesFeature:
     def __init__(self, data_dir):
@@ -53,9 +57,9 @@ class HouseArea(FeatureBase):
 # ...
 
 if __name__ == "__main__":
-    data_dir = "./features"
-    train_path = "./train.csv"
-    test_path = "./test.csv"
+    data_dir = BASE_DIR + "features/feature_data"
+    train_path = BASE_DIR + "data/train.csv"
+    test_path = BASE_DIR + "data/test.csv"
 
     house_prices_feature = HousePricesFeature(data_dir)
     train_features, test_features = house_prices_feature.create_features(train_path, test_path)
