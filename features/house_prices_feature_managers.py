@@ -1,6 +1,9 @@
 import os
-from pathlib import Path
 import csv
+import time
+from pathlib import Path
+from contextlib import contextmanager
+
 import pandas as pd
 
 # ▼親ディレクトリの定義
@@ -23,6 +26,14 @@ def create_memo(col_name: str, desc: str):
         
         writer = csv.writer(f)
         writer.writerow([col_name, desc])
+
+# ▼タイマー
+@contextmanager
+def timer(name):
+    t0 = time.time()
+    print(f"[{name}] start")
+    yield
+    print(f"[{name}] done in {time.time() - t0:.0f} s")
 
 
 class HousePricesFeature:
@@ -121,8 +132,9 @@ class FeatureBase:
                 - train_feature (pd.DataFrame): 学習データの特徴量のデータフレーム。
                 - test_feature (pd.DataFrame): テストデータの特徴量のデータフレーム。
         """
-        train_feature, test_feature = self.generate_feature(train_data, test_data)
-        self.save_feature(train_feature, test_feature)
+        with timer(name=self.__class__.__name__):
+            train_feature, test_feature = self.generate_feature(train_data, test_data)
+            self.save_feature(train_feature, test_feature)
         return train_feature, test_feature
 
     def generate_feature(self, train_data, test_data):
