@@ -76,11 +76,16 @@ class HousePricesFeature:
         train_features = pd.DataFrame()
         test_features = pd.DataFrame()
 
-        # 個々の特徴量クラスのインスタンスを作成し、特徴量を生成
+        # ▼個々の特徴量クラスのインスタンスを作成し、特徴量を生成
         house_area = HouseArea(self.data_dir)
         train_house_area, test_house_area = house_area.create_feature(train_data, test_data)
         train_features = pd.concat([train_features, train_house_area], axis=1)
         test_features = pd.concat([test_features, test_house_area], axis=1)
+
+        ms_sub_class = MSSubClass(self.data_dir)
+        train_ms_sub_class, test_ms_sub_class = ms_sub_class.create_feature(train_data, test_data)
+        train_features = pd.concat([train_features, train_ms_sub_class], axis=1)
+        test_features = pd.concat([test_features, test_ms_sub_class], axis=1)
 
         # 他の特徴量クラスも同様に追加
         # ...
@@ -163,6 +168,8 @@ class FeatureBase:
         train_feature.to_feather(os.path.join(self.data_dir, f"{self.__class__.__name__}_train.feather"))
         test_feature.to_feather(os.path.join(self.data_dir, f"{self.__class__.__name__}_test.feather"))
 
+
+# ▼特徴量作成
 class HouseArea(FeatureBase):
     def generate_feature(self, train_data, test_data):
         train_feature = pd.DataFrame()
@@ -173,6 +180,18 @@ class HouseArea(FeatureBase):
 
         create_memo("HouseArea", "家の総面積: 地下の面積＋1階の面積＋2階の面積")
         return train_feature, test_feature
+    
+class MSSubClass(FeatureBase):
+    def generate_feature(self, train_data, test_data):
+        train_feature = pd.DataFrame()
+        test_feature = pd.DataFrame()
+
+        train_feature["MSSubClass"] = train_data["MSSubClass"]
+        test_feature["MSSubClass"] = test_data["MSSubClass"]
+        create_memo("MSSubClass", "売却の対象となる住居タイプ")
+        return train_feature, test_feature
+
+        
 
 # 他の特徴量クラスも同様に実装
 # ...
