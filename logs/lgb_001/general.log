@@ -1,0 +1,11 @@
+2024-05-05 14:00:06,871 - INFO - lgb_001 - start training cv
+2024-05-05 14:00:08,452 - INFO - lgb_001 - Fold 1/5 - score 2271275403.90
+2024-05-05 14:00:08,453 - INFO - lgb_001 - start training cv
+2024-05-05 14:00:09,782 - INFO - lgb_001 - Fold 2/5 - score 1266302445.12
+2024-05-05 14:00:09,782 - INFO - lgb_001 - start training cv
+2024-05-05 14:00:11,002 - INFO - lgb_001 - Fold 3/5 - score 1937707110.52
+2024-05-05 14:00:11,003 - INFO - lgb_001 - start training cv
+2024-05-05 14:00:12,035 - INFO - lgb_001 - Fold 4/5 - score 2019881114.31
+2024-05-05 14:00:12,035 - INFO - lgb_001 - start training cv
+2024-05-05 14:00:14,577 - INFO - lgb_001 - Fold 5/5 - score 1032556109.32
+2024-05-05 14:00:14,577 - INFO - lgb_001 - end training cv - score 1705544436.63
