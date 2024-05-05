@@ -1,9 +1,10 @@
 objective:regression
-metric:mse
+metric:rmse
 random_seed:0
 learning_rate:0.02
 min_data_in_bin:3
 bagging_freq:1
 bagging_seed:0
+verbose:-1
 num_iterations:10000
 early_stopping_round:None

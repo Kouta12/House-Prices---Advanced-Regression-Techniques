@@ -7,11 +7,11 @@ from contextlib import contextmanager
 import pandas as pd
 
 # ▼親ディレクトリの定義
-BASE_DIR = str(Path(os.path.abspath('')).parent) + "/"
+BASE_DIR = str(Path(os.path.abspath('')).parent)
 
 # ▼特徴量メモCSVファイル作成
 def create_memo(col_name: str, desc: str):
-    file_path = BASE_DIR + "features/_features_memo.csv"
+    file_path = BASE_DIR + "/features/_features_memo.csv"
     if not os.path.isfile(file_path):
         with open(file_path, "w"): pass
 
@@ -197,9 +197,9 @@ class MSSubClass(FeatureBase):
 # ...
 
 if __name__ == "__main__":
-    data_dir = BASE_DIR + "features/feature_data"
-    train_path = BASE_DIR + "data/train.csv"
-    test_path = BASE_DIR + "data/test.csv"
+    data_dir = BASE_DIR + "/features/feature_data"
+    train_path = BASE_DIR + "/data/train.csv"
+    test_path = BASE_DIR + "/data/test.csv"
 
     house_prices_feature = HousePricesFeature(data_dir)
     train_features, test_features = house_prices_feature.create_features(train_path, test_path)

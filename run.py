@@ -9,9 +9,12 @@ from sklearn.model_selection import KFold
 from sklearn.metrics import mean_squared_error
 import lightgbm as lgb
 
-# ▼親ディレクトリの定義
+# ▼ディレクトリの定義
 BASE_DIR = str(Path(os.path.abspath(''))) 
 LOG_DIR = BASE_DIR + "/logs"
+DATA_DIR = BASE_DIR + "/features/feature_data"
+TRAIN_PATH = BASE_DIR + "/data/train.csv"
+TEST_PATH = BASE_DIR + "/data/test.csv"
 
 # ▼ロガーの設定
 logger = logging.getLogger(__name__)
@@ -64,6 +67,7 @@ class HousePricesModel:
         self.train_logs = []
         self.target_col = target_col
         self.n_splits = n_plits
+        self.y_test_pred = None
 
         new_dir = f"{LOG_DIR}/{run_name}"
         if not os.path.exists(new_dir):
@@ -117,12 +121,12 @@ class HousePricesModel:
                 valid_names=["train", "valid"],
                 callbacks=[
                     lgb.early_stopping(100),
-                    lgb.log_evaluation(500),
-                    lgb.record_evaluation(evals_result)
+                    lgb.record_evaluation(evals_result),
+                    # lgb.log_evaluation(100)
                 ]
             )
             y_va_pred = model.predict(X_va, num_iteration=model.best_iteration)
-            score = mean_squared_error(y_va, y_va_pred)
+            score = np.sqrt(mean_squared_error(y_va, y_va_pred))
 
 
             self.models.append(model)
@@ -138,11 +142,8 @@ class HousePricesModel:
         # 使用した特徴量・ハイパーパラメータを保存
         save_feature_list(self.run_name, X_train.columns, self.models[0].params)
 
-            
 
-
-
-    def predict(self, test_data: pd.DataFrame) -> None:
+    def predict(self, test_data: pd.DataFrame):
         """テストデータに対して予測を行う。
 
         Args:
@@ -154,39 +155,29 @@ class HousePricesModel:
         X_test = test_data.drop([self.target_col]) if self.target_col in test_data.columns else test_data
         y_test_pred = np.zeros(X_test.shape[0])
         for model in self.models:
-            y_test_pred += model.predict(X_test) / self.n_splits
+            y_test_pred += model.predict(X_test, num_iteration=model.best_iteration) / self.n_splits
 
-
-        return y_test_pred
-
-    def evaluate(self, test_data: pd.DataFrame, target_col: str) -> float:
-        """テストデータに対してモデルを評価し、評価指標を返す。
-
-        Args:
-            test_data (pd.DataFrame): テストデータのデータフレーム。
-            target_col (str): 目的変数の列名。
-
-        Returns:
-            float: 評価指標（平均二乗誤差）。
-        """
-        X_test = test_data.drop([self.target_col])
-        y_test = test_data[self.target_col]
-
-        y_test_pred = self.predict(X_test)
-        mse = mean_squared_error(y_test, y_test_pred)
-        return mse
+        self.y_test_pred = y_test_pred
     
+    
+    def create_submission(self, run_name: str):
+        sample_submission_df = pd.read_csv(BASE_DIR+"/data/sample_submission.csv")
+        sample_submission_df["SalePrice"] = self.y_test_pred
+        sample_submission_df.to_csv(f"{LOG_DIR}/{run_name}/{run_name}_submission.csv", index=False)
+
 
     
 if __name__=="__main__":
 
+    # ▼実行名を定義
     run_name = "lgb_001"
 
+
     # ▼特徴量の指定
-    features = {
-        "HouseArea",
-        "MSSubClass"
-    }
+    features = [
+        "MSSubClass",
+        "HouseArea"
+    ]
 
     # ▼データの準備
     X_train, X_test = load_datasets(features)
@@ -196,13 +187,13 @@ if __name__=="__main__":
     # ▼パラメータの設定
     params = {
         "objective": "regression",
-        "metric": "mse",
+        "metric": "rmse",
         "random_seed": 0,
         "learning_rate": 0.02,
         "min_data_in_bin": 3,
         "bagging_freq": 1,
         "bagging_seed": 0,
-        # "verbose": -1,
+        "verbose": -1,
     }
 
 
@@ -212,4 +203,7 @@ if __name__=="__main__":
         train_data,
         params
     )
+
+    model.predict(X_test)
+    model.create_submission(run_name)
 
