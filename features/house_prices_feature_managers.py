@@ -5,6 +5,8 @@ from pathlib import Path
 from contextlib import contextmanager
 
 import pandas as pd
+from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import OneHotEncoder
 
 # ▼親ディレクトリの定義
 BASE_DIR = str(Path(os.path.abspath('')).parent)
@@ -57,6 +59,15 @@ class HousePricesFeature:
         """
         self.data_dir = data_dir
 
+    def create_and_concat_features(self, train_features, test_features, feature_classes: list, train_data, test_data):
+        for feature_class in feature_classes:
+            feature_instance = feature_class(self.data_dir)
+            train_feature, test_feature = feature_instance.create_feature(train_data, test_data)
+            train_features = pd.concat([train_features, train_feature], axis=1)
+            test_features = pd.concat([test_features, test_feature], axis=1)
+        return train_features, test_features
+
+
     def create_features(self, train_path, test_path):
         """学習データとテストデータから特徴量を生成し、特徴量のデータフレームを返す。
 
@@ -77,20 +88,18 @@ class HousePricesFeature:
         test_features = pd.DataFrame()
 
         # ▼個々の特徴量クラスのインスタンスを作成し、特徴量を生成
-        house_area = HouseArea(self.data_dir)
-        train_house_area, test_house_area = house_area.create_feature(train_data, test_data)
-        train_features = pd.concat([train_features, train_house_area], axis=1)
-        test_features = pd.concat([test_features, test_house_area], axis=1)
-
-        ms_sub_class = MSSubClass(self.data_dir)
-        train_ms_sub_class, test_ms_sub_class = ms_sub_class.create_feature(train_data, test_data)
-        train_features = pd.concat([train_features, train_ms_sub_class], axis=1)
-        test_features = pd.concat([test_features, test_ms_sub_class], axis=1)
+        feature_classes = [
+            HouseArea, MSSubClass, OverallQual, OverallCond, BldgType
+        ]  # 使用する特徴量クラスのリスト
+        train_features, test_features = self.create_and_concat_features(
+            train_features, test_features, feature_classes, train_data, test_data
+        )
 
         # 他の特徴量クラスも同様に追加
         # ...
 
         return train_features, test_features
+
 
 class FeatureBase:
     """特徴量生成の基底クラス。
@@ -183,12 +192,63 @@ class HouseArea(FeatureBase):
     
 class MSSubClass(FeatureBase):
     def generate_feature(self, train_data, test_data):
+        # One-hot encording
+        train_feature = pd.get_dummies(train_data["MSSubClass"], prefix="MSSubClass")
+        test_feature = pd.get_dummies(test_data["MSSubClass"], prefix="MSSubClass")
+
+        missing_cols = set(train_feature) - set(test_feature)
+        for c in missing_cols:
+            test_feature[c] = 0
+        test_feature = test_feature[train_feature.columns]
+        create_memo("MSSubClass", "売却の対象となる住居タイプ")
+        return train_feature, test_feature
+    
+class MSZoning(FeatureBase):
+    def generate_feature(self, train_data, test_data):
         train_feature = pd.DataFrame()
         test_feature = pd.DataFrame()
 
-        train_feature["MSSubClass"] = train_data["MSSubClass"]
-        test_feature["MSSubClass"] = test_data["MSSubClass"]
-        create_memo("MSSubClass", "売却の対象となる住居タイプ")
+        le = LabelEncoder()
+        le.fit(train_data["MSZoning"])
+        train_feature["MSZoning"] = le.transform(train_data["MSZoning"])
+        test_feature["MSZoning"] = le.transform(test_data["MSZoning"])
+
+        
+        create_memo("MSZoning", "売却先の一般的なゾーニング区分を示す。")
+        return train_feature, test_feature
+    
+class OverallQual(FeatureBase):
+    def generate_feature(self, train_data, test_data):
+        train_feature = pd.DataFrame()
+        test_feature = pd.DataFrame()
+
+        train_feature["OverallQual"] = train_data["OverallQual"]
+        test_feature["OverallQual"] = test_data["OverallQual"]
+        create_memo("OverallQual", "家全体の素材と仕上げを評価する。")
+        return train_feature, test_feature
+
+# numerical    
+class OverallCond(FeatureBase):
+    def generate_feature(self, train_data, test_data):
+        train_feature = pd.DataFrame()
+        test_feature = pd.DataFrame()
+
+        train_feature["OverallCond"] = train_data["OverallCond"]
+        test_feature["OverallCond"] = test_data["OverallCond"]
+        create_memo("OverallCond", "家の全体的な状態を評価")
+        return train_feature, test_feature
+    
+# categorycal
+class BldgType(FeatureBase):
+    def generate_feature(self, train_data, test_data):
+        train_feature = pd.get_dummies(train_data["BldgType"], prefix="BldgType")
+        test_feature = pd.get_dummies(test_data["BldgType"], prefix="BldgType")
+
+        missing_cols = set(train_feature.columns) - set(test_feature.columns)
+        for c in missing_cols:
+            test_feature[c] = 0
+        test_feature = test_feature[train_feature.columns]
+        create_memo("BldgType", "居住タイプ")
         return train_feature, test_feature
 
         
@@ -198,7 +258,7 @@ class MSSubClass(FeatureBase):
 
 if __name__ == "__main__":
     data_dir = BASE_DIR + "/features/feature_data"
-    train_path = BASE_DIR + "/data/train.csv"
+    train_path = BASE_DIR + "/data/proccesed_train.csv"
     test_path = BASE_DIR + "/data/test.csv"
 
     house_prices_feature = HousePricesFeature(data_dir)

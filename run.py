@@ -176,7 +176,8 @@ if __name__=="__main__":
     # ▼特徴量の指定
     features = [
         "MSSubClass",
-        "HouseArea"
+        "HouseArea",
+        ""
     ]
 
     # ▼データの準備

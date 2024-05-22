@@ -1,3 +1,6 @@
 特徴量,メモ
 HouseArea,家の総面積: 地下の面積＋1階の面積＋2階の面積
 MSSubClass,売却の対象となる住居タイプ
+OverallQual,家全体の素材と仕上げを評価する。
+OverallCond,家の全体的な状態を評価
+BldgType,居住タイプ
