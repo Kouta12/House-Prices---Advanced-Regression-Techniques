@@ -8,6 +8,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.model_selection import KFold
 from sklearn.metrics import mean_squared_error
 import lightgbm as lgb
+import shap
+import matplotlib.pyplot as plt
 
 # ▼ディレクトリの定義
 BASE_DIR = str(Path(os.path.abspath(''))) 
@@ -39,6 +41,20 @@ def save_feature_list(run_name: str, features: list, params: dict):
         for key, value in params.items():
             f.write(f"{key}:{value}\n")
         f.close()
+
+def shap_summary_plot(run_name, models, X):
+    # 全てのフォールドのモデルを使ってSHAP値を計算
+    shap_values = [shap.Explainer(model)(X) for model in models]
+
+    # SHAP値を平均化
+    shap_values_avg = sum(shap_values) / len(shap_values)
+
+    # 平均化されたSHAP値のサマリープロットを作成
+    shap.summary_plot(shap_values_avg, X, show=False)
+
+    # プロットを保存
+    plt.savefig(f"{LOG_DIR}/{run_name}/{run_name}_shap_summary.png")
+    plt.close()
 
 
 class HousePricesModel:
@@ -132,10 +148,12 @@ class HousePricesModel:
             self.models.append(model)
             self.valid_scores.append(score)
 
+
             # 学習ログの保存
             logger.info(f"{self.run_name} - Fold {fold+1}/{self.n_splits} - score {score:.2f}")
 
-
+        # SHAP値の保存
+        shap_summary_plot(self.run_name, self.models, X_train)
         # ログの記録
         logger.info(f"{run_name} - end training cv - score {np.mean(self.valid_scores):.2f}")
 
@@ -170,14 +188,16 @@ class HousePricesModel:
 if __name__=="__main__":
 
     # ▼実行名を定義
-    run_name = "lgb_001"
+    run_name = "lgb_002"
 
 
     # ▼特徴量の指定
     features = [
         "MSSubClass",
         "HouseArea",
-        ""
+        "OverallQual",
+        "OverallCond",
+        "BldgType"
     ]
 
     # ▼データの準備
@@ -206,5 +226,5 @@ if __name__=="__main__":
     )
 
     model.predict(X_test)
-    model.create_submission(run_name)
+    # model.create_submission(run_name)
 
